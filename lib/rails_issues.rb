@@ -3,8 +3,12 @@ require "open-uri"
 
 class RailsIssues
 
+  def initialize
+    @issues = JSON.load(open("https://api.github.com/repos/rails/rails/issues?state=closed"))
+  end
+
   def report
-    issues.each do |issue|
+    @issues.each do |issue|
       puts "Issue: #{issue['title']}: demorou #{time_opened(issue)} para encerrar"
     end
 
@@ -13,15 +17,9 @@ class RailsIssues
     puts "Media do tempo que levou para todas issues serem finalizadas: #{average_time_opened}"
   end
 
-  private
-
-  def issues
-    JSON.load(open("https://api.github.com/repos/rails/rails/issues?state=closed"))
-  end
-
   def time_opened(issue)
-    created_at = Time.parse(issue['created_at'])
-    closed_at  = Time.parse(issue['closed_at'])
+    created_at = Time.parse(issue["created_at"])
+    closed_at  = Time.parse(issue["closed_at"])
     seconds    = closed_at - created_at
     convert_seconds_to_formatted_time(seconds)
   end
@@ -29,13 +27,15 @@ class RailsIssues
   def average_time_opened
     total_seconds = 0
 
-    issues.each do |issue| 
-      total_seconds += Time.parse(issue['closed_at']) - Time.parse(issue['created_at'])
+    @issues.each do |issue| 
+      total_seconds += Time.parse(issue["closed_at"]) - Time.parse(issue["created_at"])
     end
 
-    average = total_seconds / issues.length
+    average = total_seconds / @issues.length
     convert_seconds_to_formatted_time(average)
   end
+
+  private  
 
   def convert_seconds_to_formatted_time(seconds)
     Time.at(seconds).utc.strftime("%H:%M:%S")
